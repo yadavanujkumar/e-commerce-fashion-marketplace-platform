@@ -1,0 +1,59 @@
+version: '3.8'  # Specify the version of Docker Compose
+
+services:
+  web:
+    image: my-ecommerce-platform:latest  # Replace with your actual image name
+    build:
+      context: ./app  # Path to your application code
+      dockerfile: Dockerfile  # Specify the Dockerfile to use
+    environment:
+      - DEBUG=${DEBUG:-false}  # Enable debug mode based on environment variable
+      - DATABASE_URL=${DATABASE_URL}  # Database connection string
+      - SECRET_KEY=${SECRET_KEY}  # Secret key for cryptographic signing
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost}  # Allowed hosts for the application
+    ports:
+      - "8000:8000"  # Map host port 8000 to container port 8000
+    volumes:
+      - ./app:/app  # Mount application code for local development
+    depends_on:
+      - db  # Ensure the database service is started before the web service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]  # Health check endpoint
+      interval: 30s  # Check every 30 seconds
+      timeout: 10s  # Timeout after 10 seconds
+      retries: 3  # Retry 3 times before marking as unhealthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'  # Limit CPU usage to 0.5 cores
+          memory: 512M  # Limit memory usage to 512MB
+        reservations:
+          cpus: '0.25'  # Reserve 0.25 cores for the service
+          memory: 256M  # Reserve 256MB of memory
+
+  db:
+    image: postgres:13  # Use PostgreSQL version 13
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-ecommerce}  # Database name
+      - POSTGRES_USER=${POSTGRES_USER:-user}  # Database user
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}  # Database password
+    volumes:
+      - db_data:/var/lib/postgresql/data  # Persist database data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user}"]  # Check if PostgreSQL is ready
+      interval: 30s  # Check every 30 seconds
+      timeout: 10s  # Timeout after 10 seconds
+      retries: 5  # Retry 5 times before marking as unhealthy
+
+volumes:
+  db_data:  # Named volume for PostgreSQL data persistence
+
+networks:
+  default:
+    driver: bridge  # Use the default bridge network
+
+# Notes:
+# - Ensure to set the environment variables in your .env file or your CI/CD pipeline.
+# - Use secrets management tools (e.g., Docker Secrets, HashiCorp Vault) for sensitive data in production.
+# - Adjust resource limits based on your application's performance requirements.
+# - For production, consider using a reverse proxy (e.g., Nginx) in front of the web service for better performance and security.

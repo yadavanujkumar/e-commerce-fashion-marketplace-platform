@@ -1,0 +1,22 @@
+# Backend dependencies for the Django-based API
+Django==4.2.3
+djangorestframework==3.14.0
+django-cors-headers==3.14.0
+django-environ==0.8.1
+psycopg2-binary==2.9.6  # PostgreSQL adapter for Django
+djangorestframework-simplejwt==5.2.2  # JWT authentication
+django-filter==23.2  # Filtering support for DRF
+django-storages==1.13.2  # For S3 storage
+boto3==1.26.0  # AWS SDK for Python
+Pillow==10.0.0  # Image processing
+celery==5.3.0  # Asynchronous task queue
+redis==4.5.0  # Redis client for Celery
+pytest==7.4.0  # Testing framework
+pytest-django==4.5.0  # Django integration for pytest
+black==23.3.0  # Code formatter
+isort==5.12.0  # Import sorting
+mypy==1.5.0  # Static type checker
+flake8==6.0.0  # Code linting
+sentry-sdk==2.14.0  # Error tracking
+django-axes==5.0.0  # Security for login attempts
+django-extensions==3.2.0  # Useful extensions for Django
