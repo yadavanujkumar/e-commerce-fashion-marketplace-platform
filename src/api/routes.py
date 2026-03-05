@@ -153,12 +153,24 @@ recommendation_service = RecommendationService()
 styling_service = StylingService()
 
 
+def _infer_category(product) -> str:
+    """Infer the outfit category from a Product ORM object using the styling engine."""
+    proxy = StylingProduct(
+        id=product.id,
+        name=product.name,
+        category="",
+        price=product.price,
+        description=product.description or "",
+    )
+    return styling_service.categorise_item(proxy)
+
+
 def _product_to_rec(product):
     """Convert a SQLAlchemy Product ORM object to a RecommendationProduct."""
     return RecommendationProduct(
         id=product.id,
         name=product.name,
-        category="",
+        category=_infer_category(product),
         price=product.price,
         description=product.description or "",
     )
@@ -169,13 +181,21 @@ def _product_to_styling(product):
     return StylingProduct(
         id=product.id,
         name=product.name,
-        category="",
+        category=_infer_category(product),
         price=product.price,
         description=product.description or "",
     )
 
 
-def _product_dict(product):
+def _refresh_catalogue():
+    """Refresh the recommendation catalogue with the latest products from the DB.
+
+    Only adds products that are not already registered, to avoid redundant work.
+    """
+    products = Product.query.all()
+    for p in products:
+        if p.id not in recommendation_service._products:
+            recommendation_service.add_product(_product_to_rec(p))
     """Serialise a product (ORM or lightweight) to a JSON-friendly dict."""
     return {
         "id": product.id,
@@ -205,10 +225,7 @@ def get_recommendations():
     user_id = str(get_jwt_identity())
     n = request.args.get('n', 5, type=int)
 
-    # Refresh catalogue from the database
-    products = Product.query.all()
-    for p in products:
-        recommendation_service.add_product(_product_to_rec(p))
+    _refresh_catalogue()
 
     recommendations = recommendation_service.get_recommendations(user_id, n=n)
     return jsonify([_product_dict(p) for p in recommendations]), 200
@@ -232,9 +249,7 @@ def get_similar_products(product_id):
     if not product:
         raise CustomException("Product not found", 404)
 
-    products = Product.query.all()
-    for p in products:
-        recommendation_service.add_product(_product_to_rec(p))
+    _refresh_catalogue()
 
     from recommendation_service import ProductNotFoundError as RecPNFE
     try:
@@ -259,9 +274,7 @@ def get_trending():
     n = request.args.get('n', 10, type=int)
     category = request.args.get('category')
 
-    products = Product.query.all()
-    for p in products:
-        recommendation_service.add_product(_product_to_rec(p))
+    _refresh_catalogue()
 
     trending = recommendation_service.get_trending(n=n, category=category)
     return jsonify([_product_dict(p) for p in trending]), 200

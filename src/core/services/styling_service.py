@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 from collections import Counter
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -291,10 +291,3 @@ class StylingService:
             if p1.color in family and p2.color in family:
                 return 0.8
         return 0.3
-
-    def _color_family(self, color: str) -> Optional[int]:
-        """Return the index of the colour family, or None."""
-        for i, family in enumerate(self._COLOR_FAMILIES):
-            if color in family:
-                return i
-        return None
