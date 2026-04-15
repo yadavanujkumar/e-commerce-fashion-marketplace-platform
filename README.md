@@ -6,6 +6,12 @@ E-Commerce Fashion Marketplace Platform is a production-oriented project scaffol
 ## Features
 - Modular domain-driven architecture with clear separation of concerns
 - Versioned HTTP API with input validation and error models
+- Fashion-specific product attributes: category, brand, size, color, image URL
+- Product search, filtering (category/brand/color/size/price range), sorting, and pagination
+- Full product CRUD (create, read, update, delete) with JWT protection
+- Order management with quantity tracking, stock validation, and cancellation with stock restoration
+- Secure authentication: password hashing (werkzeug/bcrypt) and JWT tokens
+- AI-powered product recommendations (content-based filtering) and outfit styling engine
 - Containerized development and production manifests (Docker/Kubernetes)
 - Automated tests and test data fixtures for reproducible CI runs
 - Observability: structured logs, metrics, and health endpoints
@@ -36,16 +42,110 @@ The repository follows a layered design:
 ## API
 All endpoints live under `/api/v1` and return JSON responses. Requests and responses follow explicit typed schemas. Error responses include machine-readable error codes to support automated retries and client-side handling.
 
-### Example request
+### Authentication
 ```bash
-curl -X POST -H "Content-Type: application/json" http://localhost:8000/api/v1/resource -d '{"example_key":"value"}'
+# Register
+curl -X POST http://localhost:8000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"jdoe","password":"securepass123","email":"jdoe@example.com"}'
+
+# Login (returns JWT)
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"jdoe","password":"securepass123"}'
 ```
 
-### Example response
+### Products
+```bash
+# List products (with filtering, search & pagination)
+curl "http://localhost:8000/api/v1/products?category=tops&brand=Elegance&min_price=50&max_price=200&q=silk&sort=-price&page=1&per_page=20"
+
+# Get a single product
+curl http://localhost:8000/api/v1/products/1
+
+# Create a product (requires JWT)
+curl -X POST http://localhost:8000/api/v1/products \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Silk Blouse","price":89.99,"category":"tops","brand":"Elegance","size":"M","color":"ivory","stock_quantity":50}'
+
+# Update a product (requires JWT)
+curl -X PUT http://localhost:8000/api/v1/products/1 \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"price":79.99,"color":"pearl"}'
+
+# Delete a product (requires JWT)
+curl -X DELETE http://localhost:8000/api/v1/products/1 \
+  -H "Authorization: Bearer <token>"
+```
+
+### Orders
+```bash
+# Create an order (requires JWT)
+curl -X POST http://localhost:8000/api/v1/orders \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"product_id":1,"quantity":2}'
+
+# List your orders (with pagination & status filter)
+curl "http://localhost:8000/api/v1/orders?status=pending&page=1&per_page=10" \
+  -H "Authorization: Bearer <token>"
+
+# Get a single order
+curl http://localhost:8000/api/v1/orders/1 \
+  -H "Authorization: Bearer <token>"
+
+# Cancel an order (restores stock)
+curl -X POST http://localhost:8000/api/v1/orders/1/cancel \
+  -H "Authorization: Bearer <token>"
+```
+
+### AI Recommendations & Styling
+```bash
+# Personalised recommendations (requires JWT)
+curl "http://localhost:8000/api/v1/recommendations?n=5" \
+  -H "Authorization: Bearer <token>"
+
+# Similar products
+curl "http://localhost:8000/api/v1/products/1/similar?n=5"
+
+# Trending products
+curl "http://localhost:8000/api/v1/trending?n=10&category=tops"
+
+# Outfit suggestions
+curl "http://localhost:8000/api/v1/styling/outfit?product_id=1&max_items=4"
+
+# Style profile (requires JWT)
+curl "http://localhost:8000/api/v1/styling/profile" \
+  -H "Authorization: Bearer <token>"
+```
+
+### Example response (product list)
 ```json
 {
-  "status": "ok",
-    "data": {"result": "success"}
+  "products": [
+    {
+      "id": 1,
+      "name": "Silk Blouse",
+      "description": "A luxurious silk blouse.",
+      "price": 89.99,
+      "category": "tops",
+      "brand": "Elegance",
+      "size": "M",
+      "color": "ivory",
+      "image_url": null,
+      "stock_quantity": 50,
+      "created_at": "2025-01-15T10:30:00",
+      "updated_at": "2025-01-15T10:30:00"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "per_page": 20,
+    "total": 1,
+    "pages": 1
+  }
 }
 ```
 
