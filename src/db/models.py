@@ -28,9 +28,14 @@ class Product(Base):
     __tablename__ = 'products'
     
     id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False)
+    name = Column(String(120), nullable=False)
     description = Column(Text, nullable=True)
     price = Column(Float, nullable=False)
+    category = Column(String(60), nullable=True)
+    brand = Column(String(80), nullable=True)
+    size = Column(String(20), nullable=True)
+    color = Column(String(40), nullable=True)
+    image_url = Column(String(500), nullable=True)
     stock_quantity = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -63,6 +68,7 @@ class Order(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     total_amount = Column(Float, nullable=False)
+    status = Column(String(20), nullable=False, default='pending')
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
