@@ -251,11 +251,14 @@ def get_products():
     if search:
         query = query.filter(Product.name.ilike(f'%{search}%'))
 
-    # Sorting
+    # Sorting – validate against an allowlist of permitted columns
+    ALLOWED_SORT_FIELDS = {'price', 'name', 'created_at', 'category', 'brand'}
     sort = request.args.get('sort', 'created_at')
     descending = sort.startswith('-')
     sort_field = sort.lstrip('-')
-    column = getattr(Product, sort_field, Product.created_at)
+    if sort_field not in ALLOWED_SORT_FIELDS:
+        sort_field = 'created_at'
+    column = getattr(Product, sort_field)
     query = query.order_by(column.desc() if descending else column.asc())
 
     items, meta = _paginate_query(query)
